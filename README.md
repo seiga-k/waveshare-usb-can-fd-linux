@@ -117,6 +117,11 @@ sudo install -m 644 udev/70-wscanfd.rules /etc/udev/rules.d/ && sudo udevadm con
 .venv/bin/python -m wscanfd bridge -c 0 -b 250000 -i vcan0      # needs a vcan0 interface
 ```
 
+The udev rule is only for this userspace driver. The kernel driver doesn't need it, so skip it if you only use
+`can0`/`can1`. It gives members of the `plugdev` group raw USB access to the adapter. Anyone with that access can
+transmit arbitrary frames on both buses, detach the kernel driver and send the firmware-update command, so only
+add users you trust with the bus (`sudo usermod -aG plugdev <user>`, then log in again).
+
 ## Testing
 
 Everything was tested against a real bus with a LilyGo T-2CAN-FD (ESP32-S3 + MCP2518FD) running the echo
@@ -153,7 +158,7 @@ firmware behaviour, both drivers' internals, and the test rig and results.
 | `tests/` | protocol unit tests |
 | `tools/` | hardware test scripts, CANgaroo test workspace |
 | `t2can-echo/` | ESP-IDF echo firmware for the LilyGo T-2CAN-FD test peer |
-| `udev/` | udev rule for non-root access (userspace driver) |
+| `udev/` | udev rule for non-root access (userspace driver only) |
 | `docs/` | HTML documentation |
 
 ## Disclaimer

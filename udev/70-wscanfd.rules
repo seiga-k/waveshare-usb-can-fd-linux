@@ -1,2 +1,9 @@
 # Waveshare USB-CAN-FD (non-B), NXP LPC54616 firmware using Microchip's VID
-SUBSYSTEM=="usb", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="0053", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+#
+# Only the Python userspace driver (wscanfd/) needs this rule. The kernel driver
+# does not: don't install it if you only use can0/can1 through SocketCAN.
+#
+# Raw USB access lets a user transmit arbitrary frames on both buses, detach the
+# kernel driver and send the firmware-update command, so it goes to the plugdev
+# group only and not to whoever is logged in (no TAG+="uaccess").
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="0053", MODE="0660", GROUP="plugdev"

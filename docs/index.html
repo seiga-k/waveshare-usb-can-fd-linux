@@ -790,7 +790,7 @@ abit = <code>0x0014BE2F</code> (250k), and dbit starts with <code>03 03</code> (
   <li><strong>Standard-ID records have junk in R0[17:0].</strong> Mask the ID.</li>
   <li><strong>The 0x800D reply for channel 1 contained channel 0's counters.</strong></li>
   <li><strong>One unexplained first-run failure.</strong> The very first TX run after the peer was flashed got nothing through. All later runs worked. Watch for "first StartCAN after power-up" problems.</li>
-  <li><strong>Permissions.</strong> The <code>/dev/bus/usb</code> node is root-only by default, so install the udev rule.</li>
+  <li><strong>Permissions.</strong> The <code>/dev/bus/usb</code> node is root-only by default, so the userspace driver needs the udev rule (<a href="#u-install">details</a>). The kernel driver doesn't.</li>
 </ul>
 </div>
 
@@ -803,8 +803,9 @@ abit = <code>0x0014BE2F</code> (250k), and dbit starts with <code>03 03</code> (
 sudo install -m 644 udev/70-wscanfd.rules /etc/udev/rules.d/ &amp;&amp; sudo udevadm control --reload
 # then replug the adapter
 .venv/bin/python -m pytest tests          # protocol tests against known-good byte sequences</code></pre>
-<p>The udev rule (<code>udev/70-wscanfd.rules</code>) gives the <code>plugdev</code> group and the logged-in user access:</p>
-<pre><code>SUBSYSTEM=="usb", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="0053", MODE="0660", GROUP="plugdev", TAG+="uaccess"</code></pre>
+<p>The udev rule (<code>udev/70-wscanfd.rules</code>) gives the <code>plugdev</code> group access:</p>
+<pre><code>SUBSYSTEM=="usb", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="0053", MODE="0660", GROUP="plugdev"</code></pre>
+<div class="warn"><p><strong>Install the rule only if you use the userspace driver.</strong> The kernel driver doesn't need it. Raw USB access lets a user transmit arbitrary frames on both buses, detach the kernel driver and send the firmware-update command (<a href="#p-danger">0x8006</a>). The rule therefore doesn't grant it to whoever is logged in (no <code>uaccess</code> tag). Add the users you trust with the bus to <code>plugdev</code> instead (<code>sudo usermod -aG plugdev &lt;user&gt;</code>, then log in again).</p></div>
 <p>If <code>wscanfd.ko</code> is bound to interface 0, the userspace driver detaches it on open. Use one driver or the other, not both.</p>
 
 <h3 id="u-cli">5.2 Command-line interface</h3>
@@ -1194,7 +1195,7 @@ ip -details -statistics link show can1</code></pre>
 <tr><td class="n">wscanfd/bridge.py</td><td>Bridge between the adapter and a SocketCAN (vcan) interface</td></tr>
 <tr><td class="n">wscanfd/__main__.py</td><td>CLI: <code>info</code>, <code>dump</code>, <code>send</code>, <code>bridge</code></td></tr>
 <tr><td class="n">tests/test_protocol.py</td><td>Byte-exact protocol tests</td></tr>
-<tr><td class="n">udev/70-wscanfd.rules</td><td>Device permissions</td></tr>
+<tr><td class="n">udev/70-wscanfd.rules</td><td>Device permissions (userspace driver only)</td></tr>
 <tr><td class="n">tools/fd_roundtrip.py</td><td>82-case CAN/CAN FD round-trip test against the echo peer (userspace driver)</td></tr>
 <tr><td class="n">tools/cangaroo/</td><td>CANgaroo AutoRun test: <code>wscanfd_test.py</code>, workspace template <code>wscanfd-test.cgw.in</code>, launcher <code>run.sh</code></td></tr>
 <tr><td class="n">tools/socketcan_roundtrip.py</td><td>The same round-trip test through a SocketCAN interface (kernel driver)</td></tr>
